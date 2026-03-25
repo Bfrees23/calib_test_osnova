@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЭЛЕМЕР-ТК-М90К - Калибратор температуры</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Стили для интуитивного интерфейса М90 */
+        .m90-dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .m90-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 20px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .m90-panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .temperature-display {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .temperature-value {
+            font-size: 3em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .temperature-unit {
+            font-size: 1.5em;
+            opacity: 0.8;
+        }
+        
+        .temperature-kelvin {
+            margin-top: 10px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .info-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 6px;
+        }
+        
+        .info-item-label {
+            font-size: 0.85em;
+            opacity: 0.8;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-item-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .control-group {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .control-group h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .input-row label {
+            font-weight: 600;
+            color: #555;
+            min-width: 180px;
+        }
+        
+        .input-row input[type="number"] {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            width: 120px;
+            transition: border-color 0.3s;
+        }
+        
+        .input-row input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(245, 87, 108, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(79, 172, 254, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-connected {
+            background: #4CAF50;
+        }
+        
+        .status-disconnected {
+            background: #999;
+            animation: none;
+        }
+        
+        .status-working {
+            background: #FFC107;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .process-status {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .quick-temp-presets {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .preset-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .advanced-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .advanced-section summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #333;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .advanced-section summary::after {
+            content: '▼';
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        
+        .advanced-section[open] summary::after {
+            transform: rotate(180deg);
+        }
+        
+        .advanced-content {
+            padding: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .m90-dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-row label {
+                min-width: auto;
+                margin-bottom: 5px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group button {
+                width: 100%;
+            }
+        }
+        
+        /* Стили модального окна */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-window {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.3em;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            color: #f5576c;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .modal-form-group label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .modal-form-group input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .modal-form-group input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .modal-form-group .hint {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .modal-footer button {
+            min-width: 120px;
+        }
+        
+        /* Таблица профилей */
+        .profile-table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        .profile-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .profile-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .profile-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            text-align: center;
+        }
+        
+        .profile-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .profile-table input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+        
+        .profile-table input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .profile-row-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        
+        .btn-row-action {
+            padding: 4px 8px;
+            font-size: 0.85em;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-row-up, .btn-row-down {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-row-up:hover, .btn-row-down:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-row-delete {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .btn-row-delete:hover {
+            background: #c62828;
+            color: white;
+        }
+        
+        .profile-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .profile-info-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .profile-info-panel h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .profile-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Адаптивность для мобильных */
+        @media (max-width: 768px) {
+            .m90-dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-window {
+                width: 95%;
+                max-height: 95vh;
+            }
+            
+            .modal-footer {
+                flex-direction: column;
+            }
+            
+            .modal-footer button {
+                width: 100%;
+            }
+            
+            .profile-table input {
+                width: 60px;
+                font-size: 0.85em;
+            }
+            
+            .profile-actions {
+                flex-direction: column;
+            }
+            
+            .profile-actions button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 ЭЛЕМЕР-ТК-М90К</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 20px;">Калибратор температуры</p>
+        
+        <div class="warning">
+            <strong>⚠️ Требуется браузер с поддержкой Web Serial API</strong><br>
+            Используйте Google Chrome или Microsoft Edge на HTTPS или localhost.
+        </div>
+
+        <!-- Главная панель управления -->
+        <div class="controls" style="margin-bottom: 20px;">
+            <button id="m90ConnectBtn" class="btn-primary">🔌 Подключиться</button>
+            <button id="m90DisconnectBtn" class="btn-danger" disabled>❌ Отключиться</button>
+            <button id="m90CheckConnectionBtn" class="btn-secondary" disabled>📋 Проверить связь</button>
+        </div>
+        
+        <div class="status-bar" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <span style="font-size: 1.1em;">
+                <span class="status-indicator status-disconnected" id="m90StatusIndicator"></span>
+                Статус: <strong id="m90Status">Готов к подключению</strong>
+            </span>
+        </div>
+
+        <!-- Основная информационная панель -->
+        <div class="m90-dashboard">
+            <!-- Панель температуры -->
+            <div class="m90-panel">
+                <h3>🌡️ Текущая температура</h3>
+                <div class="temperature-display">
+                    <span class="temperature-value" id="m90TemperatureC">--</span>
+                    <span class="temperature-unit">°C</span>
+                    <div class="temperature-kelvin" id="m90TemperatureK">-- K</div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-item-label">Тип прибора</span>
+                        <span class="info-item-value" id="m90DeviceType">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-item-label">Файл открыт</span>
+                        <span class="info-item-value" id="m90FileOpened">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Панель управления калибровкой -->
+            <div class="control-group" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
+                <h3>⚙️ Управление калибровкой</h3>
+                
+                <div class="input-row">
+                    <label for="m90SetPoint">🎯 Целевая температура:</label>
+                    <input type="number" id="m90SetPoint" step="0.1" value="25.0" min="-50" max="300">
+                    <span style="color: #666;">°C</span>
+                </div>
+                
+                <div class="input-row">
+                    <label for="m90StabTime">⏱️ Время стабилизации:</label>
+                    <input type="number" id="m90StabTime" step="1" value="10" min="0" max="60">
+                    <span style="color: #666;">мин</span>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="m90SetTempBtn" class="btn-primary" disabled>🔥 Установить</button>
+                    <button id="m90StopTempBtn" class="btn-danger" disabled>⏹ Стоп / Выкл</button>
+                </div>
+                
+                <div class="process-status">
+                    <strong>📊 Статус процесса:</strong> <span id="m90ProcessStatus">Ожидание...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Быстрая установка температуры -->
+        <div class="control-group">
+            <h3>🎯 Быстрая установка температуры</h3>
+            <div class="input-row">
+                <label for="m90QuickTemp">Температура:</label>
+                <input type="number" id="m90QuickTemp" step="0.1" value="25.0" min="-50" max="300">
+                <button id="m90SendQuickTempBtn" class="btn-secondary" disabled>📤 Отправить в регулятор</button>
+            </div>
+            
+            <div class="quick-temp-presets">
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='25.0'">25°C</button>
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='50.0'">50°C</button>
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='100.0'">100°C</button>
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='150.0'">150°C</button>
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='200.0'">200°C</button>
+                <button class="preset-btn" onclick="document.getElementById('m90QuickTemp').value='250.0'">250°C</button>
+            </div>
+            
+            <div id="m90QuickTempStatus" style="margin-top: 10px; color: #666; font-style: italic;">Статус: Ожидание...</div>
+        </div>
+
+        <!-- Расширенные команды (скрыты по умолчанию) -->
+        <details class="advanced-section">
+            <summary>📋 Расширенные команды (для специалистов)</summary>
+            <div class="advanced-content">
+                <div class="btn-group" style="margin-bottom: 15px;">
+                    <button id="m90ReadParamsBtn" class="btn-secondary" disabled>📖 Параметры регулятора</button>
+                    <button id="m90ReadControlBtn" class="btn-secondary" disabled>📖 Управление</button>
+                    <button id="m90ReadOutputBtn" class="btn-secondary" disabled>📖 Выходные данные</button>
+                </div>
+                
+                <div class="btn-group" style="margin-bottom: 15px;">
+                    <button id="m90OpenRAMBtn" class="btn-secondary" disabled>💾 Открыть RAM</button>
+                    <button id="m90OpenFlashBtn" class="btn-secondary" disabled>💾 Открыть Flash</button>
+                    <button id="m90UpdateFileBtn" class="btn-secondary" disabled>🔄 Актуализировать</button>
+                </div>
+                
+                <div class="btn-group" style="margin-bottom: 15px;">
+                    <button id="m90ProfilesBtn" class="btn-primary" disabled>📑 Профили температур</button>
+                </div>
+                
+                <div class="btn-group">
+                    <button id="m90PowerOnBtn" class="btn-primary" disabled>✅ Включить регулятор</button>
+                    <button id="m90PowerOffBtn" class="btn-danger" disabled>❌ Выключить регулятор</button>
+                </div>
+            </div>
+        </details>
+
+        <!-- Модальное окно для работы с профилями -->
+        <div class="modal-overlay" id="profilesModal">
+            <div class="modal-window" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h3>📑 Управление профилями температур</h3>
+                    <button class="modal-close" id="profilesModalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-info-panel">
+                        <h4>ℹ️ Информация о профилях</h4>
+                        <p style="margin: 0; color: #666; font-size: 0.9em;">
+                            Профили позволяют сохранять последовательности температурных уставок для автоматического выполнения циклов калибровки.
+                            Каждый профиль содержит до 16 шагов с температурой и временем стабилизации.
+                        </p>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button id="profileLoadBtn" class="btn-secondary">📥 Загрузить текущий профиль</button>
+                        <button id="profileSaveBtn" class="btn-primary">💾 Сохранить профиль</button>
+                        <button id="profileAddStepBtn" class="btn-secondary">➕ Добавить шаг</button>
+                        <button id="profileClearBtn" class="btn-danger">🗑️ Очистить все</button>
+                    </div>
+                    
+                    <div class="profile-table-container">
+                        <table class="profile-table">
+                            <thead>
+                                <tr>
+                                    <th>№</th>
+                                    <th>Температура (°C)</th>
+                                    <th>Время (мин)</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody id="profileTableBody">
+                                <!-- Шаги профиля будут добавлены динамически -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="profileStepsCount">0</div>
+                            <div class="stat-label">Шагов в профиле</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="profileTotalTime">0</div>
+                            <div class="stat-label">Общее время (мин)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="profileMinTemp">--</div>
+                            <div class="stat-label">Мин. температура</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="profileMaxTemp">--</div>
+                            <div class="stat-label">Макс. температура</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="profilesModalCancel" class="btn-danger">Закрыть</button>
+                    <button id="profilesModalSend" class="btn-primary">📤 Применить профиль</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Детальная информация -->
+        <div class="control-group" style="margin-top: 20px;">
+            <h3>📊 Детальная информация</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-item-label">Уставка (SetPoint)</span>
+                    <span class="info-item-value" id="m90AdvSetPoint">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Плато (Plateau)</span>
+                    <span class="info-item-value" id="m90AdvPlateau">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Скорость (Speed)</span>
+                    <span class="info-item-value" id="m90AdvSpeed">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Регулятор включен</span>
+                    <span class="info-item-value" id="m90AdvRegulatorOn">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Время стабилизации</span>
+                    <span class="info-item-value" id="m90AdvStabTime">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Мин. температура</span>
+                    <span class="info-item-value" id="m90AdvMinTemp">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Макс. температура</span>
+                    <span class="info-item-value" id="m90AdvMaxTemp">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Зона пропорциональности</span>
+                    <span class="info-item-value" id="m90AdvPropZone">--</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-item-label">Зона нечувствительности</span>
+                    <span class="info-item-value" id="m90AdvDeadZone">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для записи данных в Flash -->
+        <div class="modal-overlay" id="flashModal">
+            <div class="modal-window">
+                <div class="modal-header">
+                    <h3>📝 Запись данных в Flash</h3>
+                    <button class="modal-close" id="flashModalClose">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-form-group">
+                        <label for="flashTemperature">🌡️ Температура (°C):</label>
+                        <input type="number" id="flashTemperature" step="0.1" value="25.0" min="-50" max="300">
+                        <div class="hint">Установите целевую температуру калибровки</div>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="flashTime">⏱️ Время стабилизации (мин):</label>
+                        <input type="number" id="flashTime" step="1" value="10" min="0" max="60">
+                        <div class="hint">Время выдержки при заданной температуре</div>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="flashTempRate">📈 Скорость нагрева (°C/мин):</label>
+                        <input type="number" id="flashTempRate" step="0.1" value="5.0" min="0.1" max="20">
+                        <div class="hint">Скорость изменения температуры (ход температуры)</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="flashModalCancel" class="btn-danger">Отмена</button>
+                    <button id="flashModalSend" class="btn-primary">📤 Отправить в регулятор</button>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px; color: #333; margin-top: 20px;">📋 Журнал событий</h3>
+        <div id="log" class="log-container"></div>
+    </div>
+
+    <script src="/js/serial-direct.js"></script>
+    <script src="/js/m90-device.js"></script>
+    <script src="/js/app-m90.js"></script>
+</body>
+</html>

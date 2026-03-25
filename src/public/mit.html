@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>МИТ 8 - Многоканальный термометр</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🌡️ МИТ 8 - Многоканальный термометр</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Требуется браузер с поддержкой Web Serial API</strong><br>
+            Используйте Google Chrome или Microsoft Edge. Подключение работает только на HTTPS или localhost.<br>
+            При подключении выберите ваш COM-порт (например, COM47 для МИТ 8).
+        </div>
+
+        <div class="status-bar">
+            <span>Статус: <span id="mitStatus" class="status ready">Готов к подключению</span></span>
+        </div>
+
+        <div class="controls">
+            <button id="mitConnectBtn">🔌 Подключиться</button>
+            <button id="mitDisconnectBtn">❌ Отключиться</button>
+        </div>
+
+        <div class="temperatures">
+            <div class="temp-card">
+                <h3>Канал 1</h3>
+                <div id="mitTemp1" class="temp-value">--</div>
+            </div>
+            <div class="temp-card">
+                <h3>Канал 2</h3>
+                <div id="mitTemp2" class="temp-value">--</div>
+            </div>
+            <div class="temp-card">
+                <h3>Канал 3</h3>
+                <div id="mitTemp3" class="temp-value">--</div>
+            </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px; color: #333;">📋 Журнал событий</h3>
+        <div id="log" class="log-container"></div>
+    </div>
+
+    <script src="/js/serial-direct.js"></script>
+    <script src="/js/app-mit.js"></script>
+</body>
+</html>

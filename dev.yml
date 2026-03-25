@@ -1,0 +1,46 @@
+networks:
+  development:
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: dev.Dockerfile
+    container_name: nginx
+    volumes:
+      - ./src:/var/www
+      - ./docker/nginx/logs:/var/log/nginx
+    environment:
+      - TZ=Europe/Moscow
+    restart: always
+    ports:
+      - 0.0.0.0:80:80
+    depends_on:
+      - php
+    profiles:
+      - client
+    networks:
+      - development
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: dev.Dockerfile
+    container_name: php
+    volumes:
+      - ./src:/var/www
+    environment:
+      - TZ=Europe/Moscow
+      - COMPOSER_MEMORY_LIMIT=-1
+      - HOME=/tmp
+      - DEMO_MODE=false
+    # Для Windows - раскомментируйте и укажите ваш COM-порт
+    # devices:
+    #   - "//./COM47://./COM47"
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    restart: always
+    profiles:
+      - client
+    networks:
+      - development
